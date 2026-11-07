@@ -13,6 +13,8 @@ The dashboard shall:
 - be optimized for a waveshare 800x480 e-ink b/w display
 - run unattended for months
 - target lay people
+- Language is: German
+- Time Zone: Europe/Berlin
 
 ## Hardware
 
@@ -47,7 +49,6 @@ Do not design for portrait mode.
 - Avoid animations
 - Avoid frequent screen refreshes
 - Favor static dashboards
-- Dashboard updates every 5-15 minutes
 - High readability is more important than visual effects
 
 Display refresh target:
@@ -56,12 +57,11 @@ Display refresh target:
 
 
 Dashboard layout:
-- Clock and Date
 - Current weather
 - Weather Forecast
 - PV production
 - Battery state
-- Calendar entries
+- Date and Calendar entries
 - Arsenal countdown
 
 
@@ -74,7 +74,7 @@ Dashboard layout:
 
 The display is wall-mounted and viewed from several meters away.
 - Large, high-contrast typography suitable for e-paper displays.
-- no graphics but only text and numbers
+- no icons but only text and numbers, for the weather forecast a chart
 
 Prioritize:
 1. Readability
@@ -107,6 +107,11 @@ Source Code:
 Deployment:
 - Raspberry Pi pulls code from GitHub
 - No direct development on Raspberry Pi
+
+
+## Operation
+- sleep mode without updates from 00:00 to 6:00. 
+- indicate sleep mode on display when active
 
 ## Technical Requirements
 
@@ -143,3 +148,7 @@ Use:
 The repository must be safe to publish publicly on GitHub.
 Store secrets exclusively in .env files which are excluded via .gitignore.
 
+Project License
+
+Use MIT License unless explicitly instructed otherwise.
+Any generated code must be compatible with the MIT License.
