@@ -1,0 +1,3 @@
+Pillow>=10.0
+# Windows has no system timezone database (Raspberry Pi OS does) - dev only
+tzdata; sys_platform == "win32"

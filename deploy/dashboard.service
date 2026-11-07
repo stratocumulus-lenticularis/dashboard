@@ -1,0 +1,19 @@
+[Unit]
+Description=E-paper dashboard
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust user and path to your Raspberry Pi
+User=cockpit
+WorkingDirectory=/home/cockpit/dashboard
+ExecStart=/home/cockpit/dashboard/.venv/bin/python -m dashboard
+Restart=always
+RestartSec=30
+# keep RAM use bounded on the Pi Zero 2 W (512 MB)
+MemoryMax=200M
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
