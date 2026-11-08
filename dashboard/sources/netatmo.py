@@ -50,20 +50,19 @@ def parse(body: dict, device_id: str = "") -> Observation:
     devices = body["body"]["devices"]
     dev = next((d for d in devices if not device_id or d["_id"] == device_id), devices[0])
     obs = Observation()
-    indoor = dev.get("dashboard_data", {})
-    obs.pressure = indoor.get("AbsolutePressure") or indoor.get("Pressure")
+    # base station: pressure ("Pressure" = sea level, the usual weather value)
+    base = dev.get("dashboard_data", {})
+    obs.pressure = base.get("Pressure") or base.get("AbsolutePressure")
+    obs.pressure_trend = base.get("pressure_trend")
+    # outdoor module (NAModule1): temperature and humidity. The station has
+    # no wind/rain gauge - wind and rain come from MeteoSwiss.
     for mod in dev.get("modules", []):
-        dd = mod.get("dashboard_data", {})
-        kind = mod.get("type")
-        if kind == "NAModule1":  # outdoor
+        if mod.get("type") == "NAModule1" and obs.temperature is None:
+            dd = mod.get("dashboard_data", {})
             obs.temperature = dd.get("Temperature")
             obs.humidity = dd.get("Humidity")
-        elif kind == "NAModule3":  # rain gauge
-            obs.rain_1h = dd.get("sum_rain_1")
-            obs.rain_24h = dd.get("sum_rain_24")
-        elif kind == "NAModule2":  # wind gauge
-            obs.wind_kmh = dd.get("WindStrength")
-            obs.gust_kmh = dd.get("GustStrength")
+            obs.t_min = dd.get("min_temp")
+            obs.t_max = dd.get("max_temp")
     return obs
 
 

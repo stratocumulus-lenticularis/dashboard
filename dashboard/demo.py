@@ -14,15 +14,25 @@ def sample(now: datetime) -> dict[str, Snapshot]:
         return Snapshot(v, now, False)
 
     start = now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
-    temps = [8 + 5 * math.sin((i - 8) / 24 * 2 * math.pi) for i in range(72)]
-    rain = [1.2 if 20 <= i < 26 else (0.3 if 40 <= i < 43 else 0.0) for i in range(72)]
+    n = 72
+    temps = [8 + 5 * math.sin((i - 8) / 24 * 2 * math.pi) for i in range(n)]
+    rain = [1.2 if 20 <= i < 26 else (0.3 if 40 <= i < 43 else 0.0) for i in range(n)]
+    # sunshine only between ~08 and ~16 o'clock, partly cloudy on day 2
+    sun = [0.0] * n
+    for i in range(n):
+        hour = (start.hour + i) % 24
+        if 8 <= hour <= 16:
+            sun[i] = 60.0 if i < 24 else (25.0 if i < 48 else 0.0)
+    wind = [8 + 6 * math.sin(i / 7) for i in range(n)]
+    gust = [w + 6 + (i % 5) for i, w in enumerate(wind)]
+    sun_h = [5.0, 3.0, 0.0, 1.5, 4.0, 6.5]
     days = [
-        DayForecast(now + timedelta(days=i), 6 + i, 12 + i, p)
-        for i, p in enumerate([0.1, 0.0, 9.8, 17.3, 2.5, 2.3])
+        DayForecast(now + timedelta(days=i), 6 + i, 12 + i, p, s)
+        for i, (p, s) in enumerate(zip([0.1, 0.0, 9.8, 17.3, 2.5, 2.3], sun_h))
     ]
     return {
-        "observation": ok(Observation(9.6, 82, 1012, 0.0, 1.4, 12, 25)),
-        "forecast": ok(Forecast(start, temps, rain, days)),
+        "observation": ok(Observation(9.6, 82, 1012, 3.0, 12.0, "stable")),
+        "forecast": ok(Forecast(start, temps, rain, days, sun=sun, wind=wind, gust=gust)),
         "energy": ok(Energy(3420, 910, -2510, 1400, 64)),
         "calendar": ok([
             Event(None, "Schulfest Elternabend"),

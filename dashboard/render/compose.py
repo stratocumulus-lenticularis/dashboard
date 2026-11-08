@@ -26,10 +26,10 @@ log = logging.getLogger(__name__)
 
 M = 10  # outer margin
 HEADER_H = 40
-FOOTER_Y = 424
-MID_Y = 236
+FOOTER_Y = 432
+MID_Y = 232
 COL1, COL2 = 250, 520  # vertical column rules (top row)
-CHART_W = 560  # chart / outlook split (bottom row)
+CHART_W = 540  # chart / outlook split (bottom row)
 
 
 def _safe(name: str, fn, *args) -> None:

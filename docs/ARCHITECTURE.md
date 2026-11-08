@@ -45,6 +45,18 @@ Arsenal countdown                                424-480
 
 No icons: text, numbers and one chart. Fonts 15-56 px, bold for key values.
 
+## Which source provides what
+
+| Source | Data shown |
+|---|---|
+| Netatmo (own station) | temperature, humidity, pressure (+ trend), today's min/max. The station has no wind or rain sensor. |
+| MeteoSwiss | hourly temperature, rain, sunshine duration and wind (mean + gusts); daily min/max, rain and sunshine hours |
+
+The 48 h chart shares one time axis for all four MeteoSwiss series:
+temperature line with rain bars on top, a sunshine strip (bar height = minutes
+of sun in that hour) and a wind strip (line = mean wind, dots = gusts, km/h).
+Daily sunshine hours in "Aussichten" are summed from the hourly series.
+
 ## Reliability
 
 - Per-source error isolation. Stale data stays visible, marked `Stand HH:MM`

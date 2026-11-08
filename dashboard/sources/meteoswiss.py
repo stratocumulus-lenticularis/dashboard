@@ -22,6 +22,10 @@ def _ms(value: int, cfg: Config) -> datetime:
     return datetime.fromtimestamp(value / 1000, tz=timezone.utc).astimezone(cfg.tz)
 
 
+def _series(g: dict, key: str) -> list[float]:
+    return [float(v) for v in g.get(key, [])]
+
+
 def hourly_precip(g: dict, cfg: Config) -> list[float]:
     """Hourly rain (mm), aligned with graph.start like the temperature series.
 
@@ -72,7 +76,23 @@ def parse(data: dict, cfg: Config) -> Forecast:
     if g.get("sunrise") and g.get("sunset"):
         sunrise, sunset = _ms(g["sunrise"][0], cfg), _ms(g["sunset"][0], cfg)
 
-    return Forecast(start, temps, precip, days, sunrise, sunset)
+    # Hourly sunshine (minutes), wind and gusts (km/h), aligned with `start`.
+    fc = Forecast(
+        start, temps, precip, days, sunrise, sunset,
+        sun=_series(g, "sunshine1h"),
+        wind=_series(g, "windSpeed1h"),
+        gust=_series(g, "gustSpeed1h"),
+    )
+
+    # daily sunshine hours = sum of the hourly minutes per local date
+    minutes: dict = {}
+    for i, m in enumerate(fc.sun):
+        d = fc.time_at(i).date()
+        minutes[d] = minutes.get(d, 0.0) + m
+    for day in fc.days:
+        m = minutes.get(day.day.date())
+        day.sunshine_h = None if m is None else m / 60
+    return fc
 
 
 def fetch(cfg: Config) -> Forecast:

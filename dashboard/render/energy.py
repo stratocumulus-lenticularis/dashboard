@@ -20,11 +20,11 @@ def panel(draw, box: Box, snap) -> None:
         text(draw, (x, y + 10), "keine Daten", 22)
         return
 
-    text(draw, (x, y - 4), _kw(e.pv_w), 48, bold=True)
-    text(draw, (x, y + 52), "Erzeugung", 16)
+    text(draw, (x, y - 4), _kw(e.pv_w), 44, bold=True)
+    text(draw, (x, y + 46), "Erzeugung", 16)
 
     # battery bar
-    by = y + 76
+    by = y + 68
     bar_w, bar_h = w - 70, 22
     draw.rectangle((x, by, x + bar_w, by + bar_h), outline=BLACK, width=2)
     if e.battery_soc is not None:
@@ -38,12 +38,12 @@ def panel(draw, box: Box, snap) -> None:
         state = f"lädt mit {_kw(e.battery_w)}"
     else:
         state = f"entlädt mit {_kw(-e.battery_w)}"
-    text(draw, (x, by + bar_h + 4), state, 16)
+    text(draw, (x, by + bar_h + 2), state, 16)
 
-    ry = by + bar_h + 28
+    ry = by + bar_h + 24
     text(draw, (x, ry), "Verbrauch", 16)
     text(draw, (x + w, ry), _kw(e.consumption_w), 16, bold=True, anchor="ra")
     if e.grid_w is not None:
         label = "Netzbezug" if e.grid_w >= 0 else "Einspeisung"
-        text(draw, (x, ry + 22), label, 16)
-        text(draw, (x + w, ry + 22), _kw(abs(e.grid_w)), 16, bold=True, anchor="ra")
+        text(draw, (x, ry + 20), label, 16)
+        text(draw, (x + w, ry + 20), _kw(abs(e.grid_w)), 16, bold=True, anchor="ra")

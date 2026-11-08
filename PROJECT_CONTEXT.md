@@ -85,10 +85,12 @@ Prioritize:
 
 
 ## Information sources
-- netatmo
-- MeteoSwiss
+- netatmo measuring temperature, humidity and pressure. no wind, no precipitation
+- MeteoSwiss. interest in hourly temperature, precipitation, sunshine duration and wind
 - Solar Manager
 - google
+
+
 
 ## Target location:
 - User configurable
