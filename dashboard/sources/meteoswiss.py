@@ -22,16 +22,39 @@ def _ms(value: int, cfg: Config) -> datetime:
     return datetime.fromtimestamp(value / 1000, tz=timezone.utc).astimezone(cfg.tz)
 
 
+def hourly_precip(g: dict, cfg: Config) -> list[float]:
+    """Hourly rain (mm), aligned with graph.start like the temperature series.
+
+    MeteoSwiss delivers rain in two consecutive parts:
+      - precipitation10m: 10-minute values from `start` up to
+        `startLowResolution` (a window of roughly 22-27 h that changes
+        during the day)
+      - precipitation1h:  hourly values beginning AT `startLowResolution`
+    The 1h series therefore does NOT begin at `start` (unlike temperature).
+    Both parts are joined here by timestamp, so the result has one value
+    per hour starting at `start`, like temperatureMean1h.
+    """
+    p10 = [float(v) for v in g.get("precipitation10m", [])]
+    p1h = [float(v) for v in g.get("precipitation1h", [])]
+    n_temps = len(g.get("temperatureMean1h", [])) or len(p1h)
+
+    low = g.get("startLowResolution")
+    head_hours = round((low - g["start"]) / 3_600_000) if low else 0
+    head_hours = max(0, min(head_hours, n_temps))
+
+    head = []
+    for h in range(head_hours):
+        chunk = p10[h * 6:h * 6 + 6]  # missing values (partial hour) count as 0
+        head.append(round(sum(chunk), 2))
+    return (head + p1h)[:n_temps]
+
+
 def parse(data: dict, cfg: Config) -> Forecast:
     g = data["graph"]
     start = _ms(g["start"], cfg)
     temps = [float(v) for v in g.get("temperatureMean1h", [])]
 
-    # precipitation1h is hourly mm; fall back to summing 10-minute values
-    precip = [float(v) for v in g.get("precipitation1h", [])]
-    if not precip:
-        p10 = g.get("precipitation10m", [])
-        precip = [sum(p10[i:i + 6]) for i in range(0, len(p10), 6)]
+    precip = hourly_precip(g, cfg)
 
     days = []
     for d in data.get("forecast", []):
