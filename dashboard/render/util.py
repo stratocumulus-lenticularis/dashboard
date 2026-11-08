@@ -19,10 +19,10 @@ NA = "–"
 
 
 def num(v: float | None, digits: int = 0, unit: str = "") -> str:
-    """German number: decimal comma, '–' if missing."""
+    """Number with decimal point, '–' if missing."""
     if v is None:
         return NA
-    s = f"{v:.{digits}f}".replace(".", ",")
+    s = f"{v:.{digits}f}"  # decimal point (not comma), as requested
     if s.startswith("-0") and float(v) > -0.5 * 10 ** -digits:
         s = s[1:]
     return s + unit

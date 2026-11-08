@@ -174,7 +174,10 @@ def outlook(draw, box: Box, snap) -> None:
         text(draw, (x, y + 10), "keine Daten", 22)
         return
 
-    sun_x = x + w - 66  # right edge of the sunshine column
+    # columns: weekday | temperature | sunshine (right-aligned) | rain (right-aligned)
+    # the rain column needs ~65 px ("9.8 mm"), so the sunshine column ends 90 px
+    # before the right edge to leave a visible gap
+    sun_x = x + w - 90
     text(draw, (x + 40, y), "Temp.", 13)
     text(draw, (sun_x, y), "Sonne", 13, anchor="ra")
     text(draw, (x + w, y), "Regen", 13, anchor="ra")
