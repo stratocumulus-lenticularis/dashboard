@@ -7,6 +7,7 @@ show it with its "Stand HH:MM" timestamp.
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any, Callable
@@ -15,6 +16,9 @@ from .config import Config
 from .sources import arsenal, calendar_ics, meteoswiss, netatmo, solarmanager
 
 log = logging.getLogger(__name__)
+
+# seconds to wait before each attempt: 3 attempts, 15 s and 45 s apart
+RETRY_DELAYS_S = (0, 15, 45)
 
 # name -> fetch function. Add new sources here.
 SOURCES: dict[str, Callable[[Config], Any]] = {
@@ -43,13 +47,29 @@ class Hub:
         for name, fetch in SOURCES.items():
             snap = self.data[name]
             try:
-                snap.value = fetch(self.cfg)
+                snap.value = self._fetch_with_retry(name, fetch)
                 snap.fetched_at = datetime.now(self.cfg.tz)
                 snap.stale, snap.error = False, ""
             except Exception as exc:  # noqa: BLE001 - isolate every source
                 snap.stale, snap.error = True, f"{type(exc).__name__}: {exc}"
                 log.warning("source %s failed: %s", name, snap.error)
         return self.data
+
+    def _fetch_with_retry(self, name: str, fetch: Callable[[Config], Any]) -> Any:
+        """Retry transient errors (right after boot Wi-Fi/DNS is often not ready)."""
+        last: Exception | None = None
+        for attempt, delay in enumerate(RETRY_DELAYS_S, start=1):
+            if delay:
+                time.sleep(delay)
+            try:
+                return fetch(self.cfg)
+            except ValueError:  # "not configured" - retrying cannot help
+                raise
+            except Exception as exc:  # noqa: BLE001
+                last = exc
+                log.info("source %s attempt %d failed: %s", name, attempt, exc)
+        assert last is not None
+        raise last
 
 
 # A failed source keeps showing its last value, but only up to this age.
