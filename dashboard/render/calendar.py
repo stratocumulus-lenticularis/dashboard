@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from .util import BLACK, WD_SHORT, fit, heading, stale_note, text, text_w
+from .util import BLACK, WD_SHORT, fit, heading, no_data, stale_note, text, text_w
 
 Box = tuple[int, int, int, int]
 
@@ -15,7 +15,7 @@ def today(draw, box: Box, snap) -> None:
     stale_note(draw, x + w, box[1] + 2, snap)
     events = snap.value
     if events is None:
-        text(draw, (x, y + 10), "keine Daten", 22)
+        no_data(draw, x, y + 10, snap)
         return
     if not events:
         text(draw, (x, y + 10), "Keine Termine", 22)
@@ -50,7 +50,12 @@ def arsenal(draw, box: Box, snap, now: datetime) -> None:
     mid = y + h // 2
     m = snap.value
     if m is None:
-        label = "Arsenal: keine Daten" if snap.stale else "Arsenal: kein Spiel angesetzt"
+        if not snap.stale:
+            label = "Arsenal: kein Spiel angesetzt"
+        elif snap.fetched_at is not None:
+            label = "Arsenal: Daten veraltet"
+        else:
+            label = "Arsenal: keine Daten"
         text(draw, (x, mid), label, 22, anchor="lm")
         return
     secs = (m.kickoff - now).total_seconds()

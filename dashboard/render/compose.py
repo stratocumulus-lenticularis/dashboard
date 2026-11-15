@@ -47,6 +47,8 @@ def render(data: dict, now: datetime) -> Image.Image:
     # header
     text(d, (M, 6), long_date(now), 26, bold=True)
     text(d, (WIDTH - M, 14), now.strftime("%H:%M"), 20, anchor="ra")
+    if data and all(s.stale for s in data.values()):  # nothing could be fetched
+        text(d, (WIDTH - M - 70, 14), "Keine Internetverbindung", 20, bold=True, anchor="ra")
     d.line((0, HEADER_H, WIDTH, HEADER_H), fill=BLACK, width=2)
 
     # rules
@@ -57,13 +59,13 @@ def render(data: dict, now: datetime) -> Image.Image:
     d.line((0, FOOTER_Y, WIDTH, FOOTER_Y), fill=BLACK, width=2)
 
     top_h = MID_Y - HEADER_H - 6
-    _safe("current", weather.current, d, (M, HEADER_H + 6, COL1 - 2 * M, top_h), data["observation"], now)
+    _safe("current", weather.current, d, (M, HEADER_H + 6, COL1 - 2 * M, top_h), data["observation"])
     _safe("energy", energy.panel, d, (COL1 + M, HEADER_H + 6, COL2 - COL1 - 2 * M, top_h), data["energy"])
     _safe("calendar", calendar.today, d, (COL2 + M, HEADER_H + 6, WIDTH - COL2 - 2 * M, top_h), data["calendar"])
 
     bot_h = FOOTER_Y - MID_Y - 6
     _safe("chart", weather.chart, d, (M, MID_Y + 6, CHART_W - 2 * M, bot_h), data["forecast"], now)
-    _safe("outlook", weather.outlook, d, (CHART_W + M, MID_Y + 6, WIDTH - CHART_W - 2 * M, bot_h), data["forecast"])
+    _safe("outlook", weather.outlook, d, (CHART_W + M, MID_Y + 6, WIDTH - CHART_W - 2 * M, bot_h), data["forecast"], now)
 
     _safe("arsenal", calendar.arsenal, d, (M, FOOTER_Y + 2, WIDTH - 2 * M, HEIGHT - FOOTER_Y - 4), data["match"], now)
     return img

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .util import BLACK, NA, WHITE, heading, num, stale_note, text
+from .util import BLACK, NA, WHITE, heading, no_data, num, stale_note, text
 
 Box = tuple[int, int, int, int]
 
@@ -17,7 +17,7 @@ def panel(draw, box: Box, snap) -> None:
     stale_note(draw, x + w, box[1] + 2, snap)
     e = snap.value
     if e is None:
-        text(draw, (x, y + 10), "keine Daten", 22)
+        no_data(draw, x, y + 10, snap)
         return
 
     text(draw, (x, y - 4), _kw(e.pv_w), 44, bold=True)

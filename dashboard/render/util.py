@@ -57,8 +57,21 @@ def heading(draw, x: int, y: int, w: int, title: str) -> int:
 
 
 def stale_note(draw, x: int, y: int, snap, anchor: str = "ra") -> None:
-    """Mark outdated data: 'Stand HH:MM' (or 'keine Daten')."""
+    """Mark outdated data: 'Stand HH:MM' (today) or 'Stand DD.MM.' (older)."""
     if not snap.stale:
         return
-    label = "Stand " + snap.fetched_at.strftime("%H:%M") if snap.fetched_at else "keine Daten"
+    if snap.fetched_at is None:
+        label = "keine Daten"
+    elif snap.fetched_at.date() == datetime.now(snap.fetched_at.tzinfo).date():
+        label = "Stand " + snap.fetched_at.strftime("%H:%M")
+    else:
+        label = "Stand " + snap.fetched_at.strftime("%d.%m.")
     text(draw, (x, y), label, 14, bold=True, anchor=anchor)
+
+
+def no_data(draw, x: int, y: int, snap) -> None:
+    """Placeholder for an empty panel."""
+    if snap.fetched_at is not None:  # had data before, now too old to show
+        text(draw, (x, y), "Daten veraltet", 22, bold=True)
+    else:
+        text(draw, (x, y), "keine Daten", 22)

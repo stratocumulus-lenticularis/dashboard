@@ -7,7 +7,7 @@ import time as _time
 from datetime import datetime, time, timedelta
 
 from .config import Config
-from .hub import Hub
+from .hub import Hub, expire
 from .render import compose
 
 log = logging.getLogger(__name__)
@@ -71,8 +71,10 @@ def run(cfg: Config, display, once: bool = False) -> None:
             asleep = False
 
         try:
-            data = hub.refresh()
-            frame = compose.render(data, datetime.now(cfg.tz))
+            hub.refresh()
+            now = datetime.now(cfg.tz)
+            # drop values that are too old to be shown as if they were current
+            frame = compose.render(expire(hub.data, now), now)
             display.show(frame)
             log.info("display updated")
         except Exception:  # noqa: BLE001 - keep running for months

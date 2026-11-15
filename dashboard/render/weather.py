@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 from datetime import datetime
 
-from .util import BLACK, NA, WD_SHORT, WHITE, heading, num, stale_note, text, text_w
+from .util import BLACK, NA, WD_SHORT, WHITE, heading, no_data, num, stale_note, text, text_w
 
 Box = tuple[int, int, int, int]  # x, y, w, h
 
@@ -19,20 +19,13 @@ HOURS = 48
 TREND = {"up": "steigend", "down": "fallend", "stable": "stabil"}
 
 
-def current(draw, box: Box, snap, now: datetime) -> None:
+def current(draw, box: Box, snap) -> None:
     x, y, w, h = box
     y = heading(draw, x, y, w, "Draußen")
     stale_note(draw, x + w, box[1] + 2, snap)
     o = snap.value
-    if o is None:
-        text(draw, (x, y + 10), "keine Daten", 22)
-        return
-    # An old reading must not look current: after 3 h without a fresh
-    # measurement show a clear message instead of the outdated number.
-    if snap.stale and snap.fetched_at and (now - snap.fetched_at).total_seconds() > 3 * 3600:
-        text(draw, (x, y + 6), "Messwerte", 22, bold=True)
-        text(draw, (x, y + 34), "veraltet", 22, bold=True)
-        text(draw, (x, y + 70), f"letzte Messung {snap.fetched_at.strftime('%d.%m. %H:%M')}", 16)
+    if o is None:  # failed, or too old to show (see hub.expire)
+        no_data(draw, x, y + 10, snap)
         return
     text(draw, (x, y - 4), num(o.temperature, 1, "°"), 56, bold=True)
 
@@ -74,12 +67,13 @@ def chart(draw, box: Box, snap, now: datetime) -> None:
     stale_note(draw, x + w, y0 + 2, snap)
     f = snap.value
     if f is None or not f.temps:
-        text(draw, (x, y + 10), "keine Daten", 22)
+        no_data(draw, x, y + 10, snap)
         return
 
     first = max(0, int((now - f.start).total_seconds() // 3600))
     n = min(HOURS, len(f.temps) - first)
-    if n < 2:
+    if n < 2:  # forecast period already over
+        no_data(draw, x, y + 10, snap)
         return
     sl = slice(first, first + n)
     temps, rain = f.temps[sl], f.precip[sl]
@@ -172,13 +166,13 @@ def _draw_wind(draw, wind, gust, left, right, step, top, bottom) -> None:
     draw.line([(left + i * step, wy(v)) for i, v in enumerate(wind)], fill=BLACK, width=2)
 
 
-def outlook(draw, box: Box, snap) -> None:
+def outlook(draw, box: Box, snap, now: datetime) -> None:
     x, y, w, h = box
     y = heading(draw, x, y, w, "Aussichten")
     stale_note(draw, x + w, box[1] + 2, snap)
     f = snap.value
     if f is None or not f.days:
-        text(draw, (x, y + 10), "keine Daten", 22)
+        no_data(draw, x, y + 10, snap)
         return
 
     # columns: weekday | temperature | sunshine (right-aligned) | rain (right-aligned)
@@ -189,7 +183,9 @@ def outlook(draw, box: Box, snap) -> None:
     text(draw, (sun_x, y), "Sonne", 13, anchor="ra")
     text(draw, (x + w, y), "Regen", 13, anchor="ra")
     y += 18
-    for d in f.days[1:6]:  # tomorrow + 4 days
+    # select by date, not list position: an older forecast may start yesterday
+    upcoming = [d for d in f.days if d.day.date() > now.date()][:5]  # tomorrow + 4 days
+    for d in upcoming:
         text(draw, (x, y), WD_SHORT[d.day.weekday()], 20, bold=True)
         text(draw, (x + 40, y + 1), f"{num(d.t_min, 0)}/{num(d.t_max, 0)}°", 19)
         text(draw, (sun_x, y + 2), num(d.sunshine_h, 0, " h"), 18, anchor="ra")
