@@ -46,7 +46,7 @@ def _netatmo_overview(cfg: Config) -> None:
         mark = "<- used" if (not cfg.netatmo_device_id and n == 0) or dev["_id"] == cfg.netatmo_device_id else ""
         dd = dev.get("dashboard_data", {})
         print(f"\nstation {n}: {dev.get('station_name') or dev.get('module_name', '?')} "
-              f"id ...{dev['_id'][-5:]} {mark}")
+              f"{mark}\n  NETATMO_DEVICE_ID={dev['_id']}")
         print(f"  base   reachable={dev.get('reachable')} "
               f"last measurement {_age(dd.get('time_utc'))} "
               f"pressure={dd.get('Pressure')}")

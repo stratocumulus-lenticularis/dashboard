@@ -81,7 +81,15 @@ def _access_token(cfg: Config) -> str:
 
 def parse(body: dict, device_id: str = "") -> Observation:
     devices = body["body"]["devices"]
-    dev = next((d for d in devices if not device_id or d["_id"] == device_id), devices[0])
+    wanted = device_id.strip().lower()
+    dev = next((d for d in devices if not wanted or d["_id"].lower() == wanted), None)
+    if dev is None:
+        log.warning(
+            "NETATMO_DEVICE_ID %r matches no station (it must be the base station's "
+            "MAC address, see `python -m dashboard --check`) - using the first station",
+            device_id,
+        )
+        dev = devices[0]
     obs = Observation()
     # base station: pressure ("Pressure" = sea level, the usual weather value)
     base = dev.get("dashboard_data", {})
