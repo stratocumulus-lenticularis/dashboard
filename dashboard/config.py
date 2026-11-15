@@ -59,6 +59,7 @@ class Config:
     netatmo_client_secret: str
     netatmo_refresh_token: str
     netatmo_device_id: str
+    netatmo_module: str
     solar_url: str
     solar_token: str
     calendar_ics_url: str
@@ -82,6 +83,7 @@ def load_config() -> Config:
         netatmo_client_secret=g("NETATMO_CLIENT_SECRET"),
         netatmo_refresh_token=g("NETATMO_REFRESH_TOKEN"),
         netatmo_device_id=g("NETATMO_DEVICE_ID"),
+        netatmo_module=g("NETATMO_MODULE"),
         solar_url=g("SOLARMANAGER_URL"),
         solar_token=g("SOLARMANAGER_TOKEN"),
         calendar_ics_url=g("GOOGLE_CALENDAR_ICS_URL"),

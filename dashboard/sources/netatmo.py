@@ -79,7 +79,29 @@ def _access_token(cfg: Config) -> str:
     raise last_error or RuntimeError("no Netatmo refresh token available")
 
 
-def parse(body: dict, device_id: str = "") -> Observation:
+def _pick_outdoor_module(dev: dict, wanted: str) -> dict | None:
+    """Outdoor module (NAModule1) of `dev`, selected by name or MAC address.
+
+    `wanted` empty -> the first outdoor module. A name/MAC that matches
+    nothing falls back to the first outdoor module and logs a warning.
+    """
+    outdoor = [m for m in dev.get("modules", []) if m.get("type") == "NAModule1"]
+    if not outdoor:
+        return None
+    wanted = wanted.strip().casefold()  # casefold: "Draußen" == "DRAUSSEN"
+    if wanted:
+        for m in outdoor:
+            if wanted in (str(m.get("module_name", "")).casefold(), str(m.get("_id", "")).casefold()):
+                return m
+        names = ", ".join(repr(m.get("module_name")) for m in outdoor)
+        log.warning(
+            "NETATMO_MODULE %r matches no outdoor module (available: %s) - using the first",
+            wanted, names,
+        )
+    return outdoor[0]
+
+
+def parse(body: dict, device_id: str = "", module: str = "") -> Observation:
     devices = body["body"]["devices"]
     wanted = device_id.strip().lower()
     dev = next((d for d in devices if not wanted or d["_id"].lower() == wanted), None)
@@ -97,15 +119,15 @@ def parse(body: dict, device_id: str = "") -> Observation:
     obs.pressure_trend = base.get("pressure_trend")
     # outdoor module (NAModule1): temperature and humidity. The station has
     # no wind/rain gauge - wind and rain come from MeteoSwiss.
-    for mod in dev.get("modules", []):
-        if mod.get("type") == "NAModule1" and obs.temperature is None:
-            dd = mod.get("dashboard_data", {})
-            obs.temperature = dd.get("Temperature")
-            obs.humidity = dd.get("Humidity")
-            obs.t_min = dd.get("min_temp")
-            obs.t_max = dd.get("max_temp")
-            if dd.get("time_utc"):
-                obs.measured_at = datetime.fromtimestamp(dd["time_utc"], tz=timezone.utc)
+    mod = _pick_outdoor_module(dev, module)
+    if mod is not None:
+        dd = mod.get("dashboard_data", {})
+        obs.temperature = dd.get("Temperature")
+        obs.humidity = dd.get("Humidity")
+        obs.t_min = dd.get("min_temp")
+        obs.t_max = dd.get("max_temp")
+        if dd.get("time_utc"):
+            obs.measured_at = datetime.fromtimestamp(dd["time_utc"], tz=timezone.utc)
     return obs
 
 
@@ -114,7 +136,7 @@ def fetch(cfg: Config) -> Observation:
         raise ValueError("Netatmo not configured")
     token = _access_token(cfg)
     body = net.get_json(STATIONS_URL, {"Authorization": f"Bearer {token}"})
-    obs = parse(body, cfg.netatmo_device_id)
+    obs = parse(body, cfg.netatmo_device_id, cfg.netatmo_module)
     if obs.temperature is None:
         raise StaleStationData("no outdoor module (NAModule1) found in station data")
     if obs.measured_at is not None:

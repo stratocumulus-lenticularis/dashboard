@@ -52,7 +52,8 @@ def _netatmo_overview(cfg: Config) -> None:
               f"pressure={dd.get('Pressure')}")
         for mod in dev.get("modules", []):
             md = mod.get("dashboard_data", {})
-            print(f"  {mod.get('type'):9} '{mod.get('module_name', '?')}' reachable={mod.get('reachable')} "
+            print(f"  {mod.get('type'):9} '{mod.get('module_name', '?')}' (id {mod.get('_id')}) "
+                  f"reachable={mod.get('reachable')} "
                   f"battery={mod.get('battery_percent')}% last measurement {_age(md.get('time_utc'))} "
                   f"temp={md.get('Temperature')} hum={md.get('Humidity')}")
 
