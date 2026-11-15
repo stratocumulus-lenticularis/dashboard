@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
-import time
+import os
+import urllib.error
+from datetime import datetime, timezone
 
 from .. import net
 from ..config import Config
@@ -14,6 +16,14 @@ log = logging.getLogger(__name__)
 
 TOKEN_URL = "https://api.netatmo.com/oauth2/token"
 STATIONS_URL = "https://api.netatmo.com/api/getstationsdata?get_favorites=false"
+
+# The outdoor module reports every ~10 min. Netatmo keeps returning the LAST
+# reading when a module is offline, so the measurement time must be checked.
+MAX_AGE_S = 45 * 60
+
+
+class StaleStationData(Exception):
+    """The station answered, but its measurement is too old to show."""
 
 
 def _token_file(cfg: Config):
@@ -31,19 +41,42 @@ def _refresh_token(cfg: Config) -> str:
     return cfg.netatmo_refresh_token
 
 
-def _access_token(cfg: Config) -> str:
-    resp = net.post_form_json(
-        TOKEN_URL,
-        {
-            "grant_type": "refresh_token",
-            "refresh_token": _refresh_token(cfg),
-            "client_id": cfg.netatmo_client_id,
-            "client_secret": cfg.netatmo_client_secret,
-        },
-    )
+def _save_refresh_token(cfg: Config, token: str) -> None:
+    """Atomic write: a crash/power loss must never leave a half-written file."""
     cfg.data_dir.mkdir(parents=True, exist_ok=True)
-    _token_file(cfg).write_text(json.dumps({"refresh_token": resp["refresh_token"]}))
-    return resp["access_token"]
+    f = _token_file(cfg)
+    tmp = f.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"refresh_token": token}))
+    os.replace(tmp, f)
+
+
+def _access_token(cfg: Config) -> str:
+    # newest saved token first; the one from .env is a fallback (e.g. after
+    # the user generated a fresh token and put it into .env)
+    candidates = [_refresh_token(cfg)]
+    if cfg.netatmo_refresh_token and cfg.netatmo_refresh_token not in candidates:
+        candidates.append(cfg.netatmo_refresh_token)
+
+    last_error: Exception | None = None
+    for token in candidates:
+        try:
+            resp = net.post_form_json(
+                TOKEN_URL,
+                {
+                    "grant_type": "refresh_token",
+                    "refresh_token": token,
+                    "client_id": cfg.netatmo_client_id,
+                    "client_secret": cfg.netatmo_client_secret,
+                },
+            )
+        except urllib.error.HTTPError as exc:
+            body = exc.read()[:200].decode("utf-8", "replace")
+            log.warning("netatmo token refresh rejected: HTTP %s %s", exc.code, body)
+            last_error = exc
+            continue
+        _save_refresh_token(cfg, resp["refresh_token"])
+        return resp["access_token"]
+    raise last_error or RuntimeError("no Netatmo refresh token available")
 
 
 def parse(body: dict, device_id: str = "") -> Observation:
@@ -63,6 +96,8 @@ def parse(body: dict, device_id: str = "") -> Observation:
             obs.humidity = dd.get("Humidity")
             obs.t_min = dd.get("min_temp")
             obs.t_max = dd.get("max_temp")
+            if dd.get("time_utc"):
+                obs.measured_at = datetime.fromtimestamp(dd["time_utc"], tz=timezone.utc)
     return obs
 
 
@@ -71,5 +106,15 @@ def fetch(cfg: Config) -> Observation:
         raise ValueError("Netatmo not configured")
     token = _access_token(cfg)
     body = net.get_json(STATIONS_URL, {"Authorization": f"Bearer {token}"})
-    log.debug("netatmo fetched at %s", time.strftime("%H:%M"))
-    return parse(body, cfg.netatmo_device_id)
+    obs = parse(body, cfg.netatmo_device_id)
+    if obs.temperature is None:
+        raise StaleStationData("no outdoor module (NAModule1) found in station data")
+    if obs.measured_at is not None:
+        age = (datetime.now(timezone.utc) - obs.measured_at).total_seconds()
+        log.info("netatmo: outdoor measurement is %d min old", age // 60)
+        if age > MAX_AGE_S:
+            raise StaleStationData(
+                f"outdoor measurement is {int(age // 60)} min old "
+                "(module offline? check battery / radio range)"
+            )
+    return obs

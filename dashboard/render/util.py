@@ -61,4 +61,4 @@ def stale_note(draw, x: int, y: int, snap, anchor: str = "ra") -> None:
     if not snap.stale:
         return
     label = "Stand " + snap.fetched_at.strftime("%H:%M") if snap.fetched_at else "keine Daten"
-    text(draw, (x, y), label, 13, anchor=anchor)
+    text(draw, (x, y), label, 14, bold=True, anchor=anchor)

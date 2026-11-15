@@ -1,4 +1,4 @@
-"""Entry point: python -m dashboard [--once] [--demo]"""
+"""Entry point: python -m dashboard [--once] [--demo] [--check]"""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(prog="dashboard")
     ap.add_argument("--once", action="store_true", help="update once and exit")
     ap.add_argument("--demo", action="store_true", help="render sample data (no APIs)")
+    ap.add_argument("--check", action="store_true", help="fetch all sources and print diagnostics")
     args = ap.parse_args()
 
     cfg = load_config()
@@ -20,6 +21,12 @@ def main() -> None:
         level=getattr(logging, cfg.log_level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+
+    if args.check:  # no display access needed
+        from .check import run as run_check
+
+        run_check(cfg)
+        return
 
     from .display import get_display
 

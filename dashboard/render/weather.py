@@ -19,13 +19,20 @@ HOURS = 48
 TREND = {"up": "steigend", "down": "fallend", "stable": "stabil"}
 
 
-def current(draw, box: Box, snap) -> None:
+def current(draw, box: Box, snap, now: datetime) -> None:
     x, y, w, h = box
     y = heading(draw, x, y, w, "Draußen")
     stale_note(draw, x + w, box[1] + 2, snap)
     o = snap.value
     if o is None:
         text(draw, (x, y + 10), "keine Daten", 22)
+        return
+    # An old reading must not look current: after 3 h without a fresh
+    # measurement show a clear message instead of the outdated number.
+    if snap.stale and snap.fetched_at and (now - snap.fetched_at).total_seconds() > 3 * 3600:
+        text(draw, (x, y + 6), "Messwerte", 22, bold=True)
+        text(draw, (x, y + 34), "veraltet", 22, bold=True)
+        text(draw, (x, y + 70), f"letzte Messung {snap.fetched_at.strftime('%d.%m. %H:%M')}", 16)
         return
     text(draw, (x, y - 4), num(o.temperature, 1, "°"), 56, bold=True)
 

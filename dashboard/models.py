@@ -20,6 +20,7 @@ class Observation:
     t_min: float | None = None  # today, outdoor module
     t_max: float | None = None
     pressure_trend: str | None = None  # "up" | "down" | "stable"
+    measured_at: datetime | None = None  # when the outdoor module last measured
 
 
 @dataclass

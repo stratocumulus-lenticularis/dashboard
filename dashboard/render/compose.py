@@ -57,7 +57,7 @@ def render(data: dict, now: datetime) -> Image.Image:
     d.line((0, FOOTER_Y, WIDTH, FOOTER_Y), fill=BLACK, width=2)
 
     top_h = MID_Y - HEADER_H - 6
-    _safe("current", weather.current, d, (M, HEADER_H + 6, COL1 - 2 * M, top_h), data["observation"])
+    _safe("current", weather.current, d, (M, HEADER_H + 6, COL1 - 2 * M, top_h), data["observation"], now)
     _safe("energy", energy.panel, d, (COL1 + M, HEADER_H + 6, COL2 - COL1 - 2 * M, top_h), data["energy"])
     _safe("calendar", calendar.today, d, (COL2 + M, HEADER_H + 6, WIDTH - COL2 - 2 * M, top_h), data["calendar"])
 
