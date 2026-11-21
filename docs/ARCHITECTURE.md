@@ -87,9 +87,12 @@ refresh only the clock box.
 
 - MeteoSwiss: unofficial app endpoint `plzDetail`. It may change without notice.
 - Netatmo: OAuth refresh-token flow. The rotating token is stored in `data/`.
-- Solar Manager: `SOLARMANAGER_URL` must point to the endpoint that returns
-  live values. Field names are matched in `sources/solarmanager.py`. This
-  could not be verified offline, so confirm it against your installation.
+- Solar Manager: cloud API (`cloud.solar-manager.ch`), documented in its
+  public Swagger spec. Auth is the `x-api-key` header with a key from
+  web.solar-manager.ch/cloud-api-keys (scope `read` is enough). The plant id
+  is looked up via `GET /v1/users`, live values come from
+  `GET /v3/users/{smId}/data/stream`. This needs an internet connection; the
+  gateway's local API on the LAN is not used.
 - Calendar: Google "secret iCal address". Recurrence support is limited to
   simple daily/weekly rules.
 - Arsenal: football-data.org free token (`FOOTBALL_DATA_TOKEN`).

@@ -60,9 +60,8 @@ class Config:
     netatmo_refresh_token: str
     netatmo_device_id: str
     netatmo_module: str
-    solar_url: str
     solar_token: str
-    solar_verify_ssl: bool
+    solar_sm_id: str
     calendar_ics_url: str
     football_token: str
     arsenal_team_id: str
@@ -85,9 +84,8 @@ def load_config() -> Config:
         netatmo_refresh_token=g("NETATMO_REFRESH_TOKEN"),
         netatmo_device_id=g("NETATMO_DEVICE_ID"),
         netatmo_module=g("NETATMO_MODULE"),
-        solar_url=g("SOLARMANAGER_URL"),
         solar_token=g("SOLARMANAGER_TOKEN"),
-        solar_verify_ssl=g("SOLARMANAGER_VERIFY_SSL").lower() not in ("0", "false", "no"),
+        solar_sm_id=g("SOLARMANAGER_SM_ID"),
         calendar_ics_url=g("GOOGLE_CALENDAR_ICS_URL"),
         football_token=g("FOOTBALL_DATA_TOKEN"),
         arsenal_team_id=g("ARSENAL_TEAM_ID") or "57",
