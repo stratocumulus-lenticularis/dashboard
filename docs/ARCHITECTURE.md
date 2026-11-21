@@ -93,6 +93,10 @@ refresh only the clock box.
   is looked up via `GET /v1/users`, live values come from
   `GET /v3/users/{smId}/data/stream`. This needs an internet connection; the
   gateway's local API on the LAN is not used.
-- Calendar: Google "secret iCal address". Recurrence support is limited to
-  simple daily/weekly rules.
+- Calendar: Google "secret iCal address" (one or several URLs, separated by
+  spaces). Recurring events (daily/weekly/monthly/yearly, interval, count,
+  until, weekday lists) are expanded, deleted and moved single occurrences
+  are honoured. Unsupported: "last Friday of the month" style rules (BYSETPOS)
+  and RDATE; such events show on their first date only. Google updates the iCal
+  feed with a delay of up to several hours, so very recent changes may be late.
 - Arsenal: football-data.org free token (`FOOTBALL_DATA_TOKEN`).
