@@ -46,9 +46,12 @@ def render(data: dict, now: datetime) -> Image.Image:
 
     # header
     text(d, (M, 6), long_date(now), 26, bold=True)
-    text(d, (WIDTH - M, 14), now.strftime("%H:%M"), 20, anchor="ra")
-    if data and all(s.stale for s in data.values()):  # nothing could be fetched
-        text(d, (WIDTH - M - 70, 14), "Keine Internetverbindung", 20, bold=True, anchor="ra")
+    # `now` is the moment this frame was drawn, NOT a live clock: the e-paper is
+    # only redrawn every refresh interval, so label it as the last update.
+    offline = bool(data) and all(s.stale for s in data.values())  # nothing could be fetched
+    text(d, (WIDTH - M, 5 if offline else 13), f"Aktualisiert {now.strftime('%H:%M')}", 14, anchor="ra")
+    if offline:
+        text(d, (WIDTH - M, 22), "Keine Internetverbindung", 14, bold=True, anchor="ra")
     d.line((0, HEADER_H, WIDTH, HEADER_H), fill=BLACK, width=2)
 
     # rules

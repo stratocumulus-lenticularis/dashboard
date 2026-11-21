@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 from datetime import datetime
 
-from .util import BLACK, NA, WD_SHORT, WHITE, heading, no_data, num, stale_note, text, text_w
+from .util import BLACK, NA, WD_SHORT, WHITE, heading, no_data, num, stale_note, text
 
 Box = tuple[int, int, int, int]  # x, y, w, h
 
@@ -46,14 +46,6 @@ def current(draw, box: Box, snap) -> None:
         ry += 22
 
 
-def _legend(draw, x: int, y: int) -> None:
-    draw.line((x, y + 8, x + 16, y + 8), fill=BLACK, width=3)
-    text(draw, (x + 21, y), "Temperatur", 13)
-    rx = x + 21 + text_w(draw, "Temperatur", 13) + 14
-    draw.rectangle((rx, y + 3, rx + 7, y + 13), fill=BLACK)
-    text(draw, (rx + 12, y), "Regen", 13)
-
-
 def _dotted_h(draw, x0: float, x1: float, y: float) -> None:
     for gx in range(int(x0), int(x1), 6):
         draw.point((gx, int(y)), fill=BLACK)
@@ -63,7 +55,6 @@ def chart(draw, box: Box, snap, now: datetime) -> None:
     """Next 48 h. Strips from top: temperature+rain, sunshine, wind."""
     x, y0, w, h = box
     y = heading(draw, x, y0, w, "Prognose 48 Stunden")
-    _legend(draw, x + 190, y0 + 2)
     stale_note(draw, x + w, y0 + 2, snap)
     f = snap.value
     if f is None or not f.temps:
